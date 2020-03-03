@@ -391,7 +391,7 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
         if (error) {
             self.reject(ERROR_CROPPER_IMAGE_NOT_FOUND_KEY, ERROR_CROPPER_IMAGE_NOT_FOUND_MSG, nil);
         } else {
-            [self cropImage:[image fixOrientation]];
+            [self cropEditorImage:[image fixOrientation]];
         }
     }];
 }
@@ -765,7 +765,7 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
         self.croppingFile[@"modifcationDate"] = modificationDate;
         NSLog(@"CroppingFile %@", self.croppingFile);
 
-        [self cropImage:[image fixOrientation]];
+        [self cropEditorImage:[image fixOrientation]];
     } else {
         ImageResult *imageResult = [self.compression compressImage:[image fixOrientation]  withOptions:self.options];
         NSString *filePath = [self persistFile:imageResult.data];
@@ -994,6 +994,41 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
 
 - (void)cropViewController:(TOCropViewController *)cropViewController didFinishCancelled:(BOOL)cancelled {
     [self dismissCropper:cropViewController selectionDone:NO completion:[self waitAnimationEnd:^{
+        if (self.currentSelectionMode == CROPPING) {
+            self.reject(ERROR_PICKER_CANCEL_KEY, ERROR_PICKER_CANCEL_MSG, nil);
+        }
+    }]];
+}
+
+#pragma mark - PECropViewController Implementation
+- (void)cropEditorImage:(UIImage *)image {
+    PECropViewController *controller = [[PECropViewController alloc] init];
+    controller.delegate = self;
+    controller.image = image;
+    controller.keepingCropAspectRatio = YES;
+    controller.toolbarHidden = YES;
+    controller.cropAspectRatio = 1.6;
+
+    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:controller];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[self getRootVC] presentViewController:navigationController animated:YES completion:nil];
+    });
+}
+#pragma mark - PECropViewController Delegate
+- (void)cropViewController:(PECropViewController *)controller didFinishCroppingImage:(UIImage *)croppedImage transform:(CGAffineTransform)transform cropRect:(CGRect)cropRect {
+    [controller dismissViewControllerAnimated:YES completion:NULL];
+    [self imageCropViewController:controller didCropImage:croppedImage usingCropRect:cropRect];
+}
+
+- (void)cropViewController:(PECropViewController *)controller didFinishCroppingImage:(UIImage *)croppedImage
+{
+    [controller dismissViewControllerAnimated:YES completion:NULL];
+    [self imageCropViewController:controller didCropImage:croppedImage usingCropRect:controller.imageCropRect];
+}
+
+- (void)cropViewControllerDidCancel:(PECropViewController *)controller {
+    [self dismissCropper:controller selectionDone:NO completion:[self waitAnimationEnd:^{
         if (self.currentSelectionMode == CROPPING) {
             self.reject(ERROR_PICKER_CANCEL_KEY, ERROR_PICKER_CANCEL_MSG, nil);
         }

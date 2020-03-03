@@ -31,6 +31,8 @@
 
 #import <TOCropViewController/TOCropViewController.h>
 
+#import <PEPhotoCropEditor/PECropViewController.h>
+
 #import "UIImage+Resize.h"
 #import "Compression.h"
 #import <math.h>
@@ -42,7 +44,8 @@ RCTBridgeModule,
 QBImagePickerControllerDelegate,
 RSKImageCropViewControllerDelegate,
 RSKImageCropViewControllerDataSource,
-TOCropViewControllerDelegate>
+TOCropViewControllerDelegate,
+PECropViewControllerDelegate>
 
 typedef enum selectionMode {
     CAMERA,
